@@ -1,10 +1,9 @@
 ---
-
 layout: post
 title: "What is this blog?"
 date: 2026-03-31 09:35:24 +0100
 categories: Testing
---
+---
 
 # So why do I make this blog?
 
