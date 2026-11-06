@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ardwetha — blogs &amp; daemons</title>
+  <meta name="description" content="ardwetha — developer of quiet software. Blogs, daemons and other small machines that run in the dark." />
+  <meta name="author" content="ardwetha" />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="ardwetha" />
+  <meta property="og:description" content="developer of quiet software — blogs, daemons &amp; other small machines" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000000'/%3E%3Ccircle cx='8' cy='8' r='4' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- CRT power-on flash -->
+  <div class="crt-boot" aria-hidden="true"></div>
+
+  <!-- drifting static particles -->
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <!-- old-TV overlays -->
+  <div class="tv-noise" aria-hidden="true"></div>
+  <div class="tv-scanlines" aria-hidden="true"></div>
+  <div class="tv-sweep" aria-hidden="true"></div>
+  <div class="tv-vignette" aria-hidden="true"></div>
+  <div class="tv-flicker" aria-hidden="true"></div>
+
+  <div class="page">
+
+    <header class="site-header">
+      <a class="brand" href="#top">ardwetha<span class="cursor">_</span></a>
+      <nav class="site-nav">
+        <a href="#projects">projects</a>
+        <a href="https://github.com/ardwetha" target="_blank" rel="noopener noreferrer">github&nbsp;↗</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="top">
+        <p class="hero-eyebrow" id="typeline">$ whoami</p>
+        <h1 class="glitch" data-text="ardwetha">ardwetha</h1>
+        <p class="hero-tagline">
+          developer of quiet software — blogs, daemons<br />
+          &amp; other small machines that run in the dark.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#projects">view projects</a>
+          <a class="btn btn-ghost" href="https://github.com/ardwetha" target="_blank" rel="noopener noreferrer">github ↗</a>
+        </div>
+      </section>
+
+      <section class="projects" id="projects">
+        <h2 class="section-title"><span class="dim">$</span> ls ~/projects</h2>
+        <div class="cards">
+
+          <article class="card">
+            <div class="card-head">
+              <h3>NiceBlog</h3>
+              <span class="card-lang">Flask · Python</span>
+            </div>
+            <p class="card-desc">
+              A very small and simple microblog server. Drop articles into a
+              folder with a YAML-style title/date frontmatter and they appear
+              on the site automatically — the look stays customizable through
+              plain HTML templates.
+            </p>
+            <ul class="card-tags">
+              <li>microblog</li>
+              <li>flask</li>
+              <li>markdown</li>
+              <li>self-hosted</li>
+            </ul>
+            <a class="card-link" href="https://github.com/ardwetha/NiceBlog" target="_blank" rel="noopener noreferrer">view on github ↗</a>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <h3>A super simple battery notification daemon</h3>
+              <span class="card-lang">Rust</span>
+            </div>
+            <p class="card-desc">
+              A tiny Rust daemon that watches your battery capacity and fires
+              customizable notifications through notify-send when your own
+              low / normal / critical thresholds are reached. Configured via
+              TOML, started at login.
+            </p>
+            <ul class="card-tags">
+              <li>linux</li>
+              <li>battery</li>
+              <li>notify-send</li>
+              <li>toml</li>
+            </ul>
+            <a class="card-link" href="https://github.com/ardwetha/A-super-simple-battery-notification-daemon" target="_blank" rel="noopener noreferrer">view on github ↗</a>
+          </article>
+
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© <span id="year">2026</span> ardwetha — broadcast in black &amp; white</p>
+      <p class="footer-sub">
+        no trackers · no cookies · just static —
+        <a href="https://github.com/ardwetha" target="_blank" rel="noopener noreferrer">signal source ↗</a>
+      </p>
+    </footer>
+
+  </div>
+
+  <div class="av-tag" aria-hidden="true">AV-1</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
