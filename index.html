@@ -1,117 +1,771 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ardwetha — blogs &amp; daemons</title>
-  <meta name="description" content="ardwetha — developer of quiet software. Blogs, daemons and other small machines that run in the dark." />
-  <meta name="author" content="ardwetha" />
-  <meta name="theme-color" content="#000000" />
-  <meta property="og:title" content="ardwetha" />
-  <meta property="og:description" content="developer of quiet software — blogs, daemons &amp; other small machines" />
-  <meta property="og:type" content="website" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000000'/%3E%3Ccircle cx='8' cy='8' r='4' fill='%23ffffff'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARDWETHA ▸ ON AIR</title>
+<meta name="description" content="ardwetha's personal broadcast — code, notes & small tools, transmitted in glorious phosphor green.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23031008'/%3E%3Crect x='2.5' y='4.5' width='11' height='7' rx='1' fill='none' stroke='%233dff8b' stroke-width='1.4'/%3E%3Cpath d='M6 12.5h4' stroke='%233dff8b' stroke-width='1.4'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --phos:#3dff8b;
+    --phos-soft:rgba(61,255,139,.55);
+    --phos-dim:rgba(61,255,139,.34);
+    --phos-faint:rgba(61,255,139,.14);
+    --ink:#03130a;
+    --screen:#030604;
+    --red:#ff5252;
+    --mono:"Cascadia Mono","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--mono);
+    background:radial-gradient(120% 100% at 50% 20%, #0b0e0b 0%, #050605 60%, #030403 100%);
+    color:var(--phos);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--phos);color:var(--ink)}
+  @media (pointer:fine){
+    body{cursor:none}
+    a,button{cursor:none}
+  }
+
+  /* ============ THE TV SET ============ */
+  .tv{
+    position:fixed; inset:14px;
+    display:flex; flex-direction:column;
+    background:linear-gradient(180deg,#171b17 0%,#0d100d 55%,#0a0c0a 100%);
+    border-radius:26px;
+    padding:14px 14px 0;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.07),
+      inset 0 -2px 0 rgba(0,0,0,.6),
+      0 0 0 1px #000,
+      0 0 80px rgba(61,255,139,.05),
+      0 34px 90px rgba(0,0,0,.85);
+  }
+  .tv::before{ /* plastic texture */
+    content:""; position:absolute; inset:0; border-radius:26px; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.014) 0 1px, transparent 1px 3px);
+  }
+
+  /* ============ SCREEN ============ */
+  .screen{
+    position:relative; flex:1; min-height:0;
+    border-radius:18px / 14px;
+    background:var(--screen);
+    overflow:hidden;
+    border:1px solid #000;
+    box-shadow:
+      inset 0 0 2px rgba(255,255,255,.05),
+      inset 0 0 90px rgba(0,0,0,.85),
+      0 0 0 3px #060806,
+      0 0 0 4px #1e241f;
+  }
+  .crt{position:absolute; inset:0; transform-origin:50% 50%}
+
+  /* content field (gets the occasional tracking jitter) */
+  .field{position:absolute; inset:0; animation:track 13s linear infinite}
+  @keyframes track{
+    0%,94.5%,100%{transform:none;filter:none}
+    95%{transform:translateY(1.5px) skewX(.4deg);filter:brightness(1.18) contrast(1.05)}
+    95.6%{transform:translateY(-1px) skewX(-.3deg)}
+    96.2%{transform:none;filter:none}
+  }
+
+  /* ---- OSD chrome (top) ---- */
+  .osd{
+    position:absolute; top:0; left:0; right:0; z-index:4;
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:16px 22px; font-size:11px; letter-spacing:.28em;
+    color:var(--phos-soft); text-shadow:0 0 8px rgba(61,255,139,.35);
+    pointer-events:none; white-space:nowrap;
+  }
+  .osd .live{display:flex; align-items:center; gap:10px; min-width:0}
+  .osd .dot{width:8px;height:8px;border-radius:50%;background:var(--red);
+    box-shadow:0 0 10px rgba(255,70,70,.9); animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  .osd .right{display:flex; gap:18px; align-items:center}
+  #osdCh{color:var(--phos);font-weight:700}
+  #clock{color:var(--phos)}
+  #clock i{font-style:normal;animation:blink 2s steps(1) infinite}
+  @keyframes blink{50%{opacity:.15}}
+
+  /* channel flash OSD */
+  #chflash{
+    position:absolute; top:56px; right:26px; z-index:4;
+    font-size:clamp(26px,3.6vw,42px); font-weight:700; letter-spacing:.08em;
+    color:var(--phos); text-shadow:0 0 20px rgba(61,255,139,.65);
+    opacity:0; pointer-events:none;
+  }
+  #chflash.show{animation:chfl 1.15s ease-out both}
+  @keyframes chfl{0%{opacity:0;transform:translateX(16px)}12%{opacity:1;transform:none}68%{opacity:1}100%{opacity:0}}
+
+  /* ---- scrolling tuner ---- */
+  .tuner{
+    position:absolute; inset:0;
+    overflow-y:auto; overflow-x:hidden;
+    scroll-snap-type:y mandatory;
+    scrollbar-width:thin; scrollbar-color:#15532f #04120a;
+  }
+  .tuner::-webkit-scrollbar{width:10px}
+  .tuner::-webkit-scrollbar-track{background:rgba(61,255,139,.04)}
+  .tuner::-webkit-scrollbar-thumb{
+    background:#13552e; border:2px solid var(--screen); border-radius:8px;
+    box-shadow:inset 0 0 0 1px rgba(61,255,139,.25);
+  }
+  .channel{
+    position:relative; height:100%;
+    scroll-snap-align:start; scroll-snap-stop:always;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:76px 30px 76px; max-width:980px; margin:0 auto; width:100%;
+  }
+  .channel>*{opacity:0; transform:translateY(14px); transition:opacity .55s ease, transform .55s ease}
+  .channel.live>*{opacity:1; transform:none}
+  .channel.live>*:nth-child(2){transition-delay:.08s}
+  .channel.live>*:nth-child(3){transition-delay:.16s}
+  .channel.live>*:nth-child(4){transition-delay:.24s}
+  .channel.live>*:nth-child(5){transition-delay:.32s}
+
+  .sec-head{
+    display:flex; align-items:center; gap:14px;
+    font-size:11px; letter-spacing:.5em; color:var(--phos-dim); margin-bottom:34px;
+  }
+  .sec-head::before,.sec-head::after{content:""; flex:1; height:1px;
+    background:linear-gradient(90deg, transparent, var(--phos-faint))}
+  .sec-head::after{background:linear-gradient(90deg, var(--phos-faint), transparent)}
+
+  /* ---- CH-01 hero ---- */
+  #ch1{text-align:center; align-items:center}
+  .hero-tag{font-size:11px;letter-spacing:.5em;color:var(--phos-dim);margin-bottom:18px}
+  h1.rgb{
+    font-size:clamp(44px,11vw,124px); font-weight:800; letter-spacing:.04em; line-height:1;
+    color:var(--phos);
+    text-shadow:
+      2.5px 0 rgba(255,60,90,.33),
+      -2.5px 0 rgba(60,190,255,.30),
+      0 0 22px rgba(61,255,139,.55),
+      0 0 70px rgba(61,255,139,.22);
+  }
+  h1.rgb span{display:inline-block; opacity:0;
+    animation:lin .7s cubic-bezier(.2,.8,.3,1) forwards;
+    animation-delay:calc(var(--i)*.085s + .95s)}
+  @keyframes lin{
+    0%{opacity:0; transform:translateY(20px) scaleY(1.5); filter:brightness(3)}
+    60%{opacity:1; filter:brightness(1.7)}
+    100%{opacity:1; transform:none; filter:none}
+  }
+  .typed-line{
+    margin-top:26px; font-size:clamp(13px,2vw,17px);
+    color:var(--phos-soft); min-height:1.6em; letter-spacing:.06em;
+  }
+  .caret{display:inline-block; width:.62em; color:var(--phos);
+    animation:blink 1s steps(1) infinite; text-shadow:0 0 10px rgba(61,255,139,.6)}
+  .freq{margin-top:30px; font-size:10px; letter-spacing:.42em; color:var(--phos-dim)}
+  .scroll-hint{
+    margin-top:52px; font-size:10px; letter-spacing:.4em; color:var(--phos-dim);
+    animation:hint 2.2s ease-in-out infinite;
+  }
+  @keyframes hint{50%{transform:translateY(6px); opacity:.45}}
+
+  /* ---- CH-02 about ---- */
+  .about-grid{display:grid; grid-template-columns:auto 1fr; gap:44px; align-items:center}
+  .ascii{
+    color:var(--phos-soft); font-size:12px; line-height:1.35; white-space:pre;
+    text-shadow:0 0 12px rgba(61,255,139,.35);
+    background:rgba(61,255,139,.03); border:1px solid var(--phos-faint);
+    border-radius:12px; padding:22px 24px; user-select:none;
+  }
+  .ascii .flashy{animation:pulse 1.2s steps(2) infinite}
+  .about-copy p{color:var(--phos-soft); font-size:clamp(14px,1.8vw,17px); line-height:1.8; letter-spacing:.02em}
+  .about-copy p+p{margin-top:14px}
+  .about-copy em{font-style:normal; color:var(--phos); text-shadow:0 0 12px rgba(61,255,139,.4)}
+  .specs{margin-top:28px; font-size:12px; line-height:2.1; letter-spacing:.08em; color:var(--phos-dim)}
+  .specs b{font-weight:400; color:var(--phos-soft)}
+  .specs i{font-style:normal; color:var(--phos-faint); padding:0 10px}
+
+  /* ---- CH-03 programs ---- */
+  .programs{display:flex; flex-direction:column; gap:14px}
+  .program{
+    display:grid; grid-template-columns:56px 1fr auto; gap:6px 16px; align-items:center;
+    padding:16px 20px; text-decoration:none;
+    background:rgba(61,255,139,.025);
+    border:1px solid var(--phos-faint); border-radius:12px;
+    transition:background .25s, border-color .25s, transform .25s, box-shadow .25s;
+  }
+  .program .num{grid-row:span 2; font-size:11px; letter-spacing:.2em; color:var(--phos-dim)}
+  .program .nm{
+    font-size:clamp(15px,2.2vw,20px); font-weight:700; color:var(--phos); position:relative;
+    text-shadow:0 0 12px rgba(61,255,139,.35); overflow:hidden;
+  }
+  .program .ds{grid-column:2; font-size:12.5px; color:var(--phos-soft); letter-spacing:.03em}
+  .program .cta{
+    grid-row:span 2; font-size:10px; letter-spacing:.26em; color:var(--phos-soft);
+    border:1px solid var(--phos-faint); border-radius:7px; padding:8px 13px; white-space:nowrap;
+    transition:.25s;
+  }
+  .program:hover, .program:focus-visible{
+    background:rgba(61,255,139,.07); border-color:rgba(61,255,139,.5);
+    transform:translateX(8px); outline:none;
+    box-shadow:0 0 28px rgba(61,255,139,.13), inset 0 0 22px rgba(61,255,139,.05);
+  }
+  .program:hover .cta, .program:focus-visible .cta{
+    background:var(--phos); color:var(--ink); border-color:var(--phos);
+    box-shadow:0 0 16px rgba(61,255,139,.55);
+  }
+  /* glitch name slices on hover */
+  .program .nm::before, .program .nm::after{
+    content:attr(data-text); position:absolute; left:0; top:0; opacity:0; pointer-events:none;
+    background:transparent; white-space:nowrap;
+  }
+  .program:hover .nm::before{opacity:.85; color:#ff3d6e; transform:translate(2px,-1px);
+    clip-path:inset(0 0 52% 0); animation:gl1 .28s steps(2) infinite}
+  .program:hover .nm::after{opacity:.85; color:#2de2ff; transform:translate(-2px,1px);
+    clip-path:inset(52% 0 0 0); animation:gl2 .28s steps(2) infinite}
+  @keyframes gl1{50%{clip-path:inset(18% 0 40% 0); transform:translate(-2px,1px)}}
+  @keyframes gl2{50%{clip-path:inset(62% 0 8% 0); transform:translate(2px,-1px)}}
+  .prog-foot{margin-top:22px; font-size:10px; letter-spacing:.3em; color:var(--phos-dim); text-align:center}
+
+  /* ---- CH-04 end card ---- */
+  #ch4{text-align:center; align-items:center}
+  .end-big{
+    font-size:clamp(30px,6vw,64px); font-weight:800; letter-spacing:.06em; color:var(--phos);
+    text-shadow:0 0 24px rgba(61,255,139,.5);
+  }
+  .end-sub{margin-top:16px; color:var(--phos-soft); font-size:clamp(13px,1.8vw,16px); line-height:1.8}
+  .end-btn{
+    margin-top:36px; display:inline-block; text-decoration:none;
+    font-size:13px; letter-spacing:.3em; color:var(--ink);
+    background:var(--phos); padding:15px 30px; border-radius:9px;
+    box-shadow:0 0 26px rgba(61,255,139,.45), inset 0 0 0 1px rgba(0,0,0,.25);
+    transition:.25s;
+  }
+  .end-btn:hover{transform:translateY(-2px); box-shadow:0 0 44px rgba(61,255,139,.7)}
+  .end-foot{margin-top:44px; font-size:10px; letter-spacing:.3em; color:var(--phos-dim); line-height:2.2}
+  .end-foot a{color:var(--phos-soft); text-decoration:none; border-bottom:1px dotted var(--phos-dim)}
+  .end-foot a:hover{color:var(--phos)}
+
+  /* ---- ticker ---- */
+  .ticker{
+    position:absolute; left:0; right:0; bottom:0; z-index:3;
+    background:linear-gradient(180deg, rgba(3,6,4,0), rgba(3,6,4,.92) 40%);
+    padding:26px 0 10px; overflow:hidden;
+    font-size:10px; letter-spacing:.34em; color:var(--phos-dim);
+  }
+  .tk{display:flex; width:max-content; animation:tick 30s linear infinite}
+  .ticker:hover .tk{animation-play-state:paused}
+  .tk span{padding-right:.34em; white-space:nowrap}
+  @keyframes tick{to{transform:translateX(-50%)}}
+
+  /* ============ CRT OVERLAYS ============ */
+  .scanlines{position:absolute; inset:0; z-index:7; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px);
+    mix-blend-mode:multiply}
+  .aperture{position:absolute; inset:0; z-index:7; pointer-events:none;
+    background:repeating-linear-gradient(90deg, rgba(61,255,139,.028) 0 1px, transparent 1px 3px)}
+  .vignette{position:absolute; inset:0; z-index:6; pointer-events:none;
+    background:radial-gradient(115% 100% at 50% 50%, transparent 58%, rgba(0,0,0,.42) 88%, rgba(0,0,0,.75) 100%)}
+  .glare{position:absolute; inset:0; z-index:6; pointer-events:none; border-radius:inherit;
+    background:
+      radial-gradient(130% 60% at 18% -8%, rgba(170,255,210,.055), transparent 42%),
+      linear-gradient(115deg, transparent 44%, rgba(180,255,210,.03) 48%, transparent 52%)}
+  .band{position:absolute; left:0; right:0; height:130px; z-index:5; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(140,255,185,.045) 45%, rgba(140,255,185,.07) 55%, transparent);
+    animation:roll 8.5s linear infinite}
+  @keyframes roll{from{top:-140px}to{top:110%}}
+  .flicker{position:absolute; inset:0; z-index:6; pointer-events:none; background:#8affbe;
+    mix-blend-mode:overlay; animation:flick 3.6s steps(1) infinite}
+  @keyframes flick{
+    0%,100%{opacity:0} 7%{opacity:.035} 8%{opacity:0} 41%{opacity:.03}
+    42%{opacity:0} 43%{opacity:.05} 44%{opacity:0} 78%{opacity:.025} 79%{opacity:0}
+  }
+  #noise{position:absolute; inset:0; z-index:8; width:100%; height:100%;
+    opacity:.055; pointer-events:none; mix-blend-mode:screen; image-rendering:pixelated}
+
+  /* static burst on channel change */
+  .screen.burst #noise{animation:nburst .42s steps(6) both}
+  @keyframes nburst{0%{opacity:.95}45%{opacity:.42}100%{opacity:.055}}
+  .screen.burst .field{animation:jolt .34s both}
+  @keyframes jolt{
+    0%{transform:translateY(4px) skewX(.7deg); filter:brightness(1.7)}
+    55%{transform:translateY(-2px); filter:brightness(1.15)}
+    100%{transform:none; filter:none}
+  }
+
+  /* standby (power off) */
+  .standby{
+    position:absolute; inset:0; z-index:3; display:grid; place-items:center;
+    background:radial-gradient(ellipse at 50% 42%, #08130c 0%, #020403 72%);
+    opacity:0; pointer-events:none; transition:opacity .45s .4s;
+  }
+  .standby span{color:var(--red); font-size:11px; letter-spacing:.55em; text-indent:.55em;
+    text-shadow:0 0 14px rgba(255,70,70,.75); animation:stdby 2.4s ease-in-out infinite}
+  @keyframes stdby{50%{opacity:.3}}
+  .tv.off .standby{opacity:1}
+  .tv.off .crt{animation:crtoff .55s ease-in both}
+  @keyframes crtoff{
+    0%{transform:none; filter:brightness(1)}
+    38%{transform:scale(1,.006); filter:brightness(3.2)}
+    70%{transform:scale(.3,.004); filter:brightness(4.5)}
+    100%{transform:scale(0,.002); opacity:0; filter:brightness(8)}
+  }
+  .tv.boot .crt{animation:crton 1s cubic-bezier(.2,.75,.25,1) both}
+  @keyframes crton{
+    0%{transform:scale(1,.002); filter:brightness(6); opacity:1}
+    38%{transform:scale(1,.002); filter:brightness(6)}
+    62%{transform:scale(1,1); filter:brightness(2.4)}
+    100%{transform:none; filter:none}
+  }
+  .tv.off .tuner{overflow:hidden; pointer-events:none}
+
+  /* ============ BEZEL STRIP ============ */
+  .strip{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    height:56px; padding:0 8px; flex:none;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px; padding-left:8px; user-select:none}
+  .brand .logo{color:var(--phos); text-shadow:0 0 12px rgba(61,255,139,.6); font-size:15px}
+  .brand b{font-size:12px; font-weight:800; letter-spacing:.34em; color:#c9d6cc}
+  .brand .model{font-size:9px; letter-spacing:.28em; color:#5a675d}
+  .led{width:9px; height:9px; border-radius:50%; background:#3a0d0d; flex:none;
+    box-shadow:inset 0 0 3px #000; transition:.3s}
+  .led.on{background:var(--phos); box-shadow:0 0 12px rgba(61,255,139,.9), inset 0 0 2px rgba(0,0,0,.4)}
+  .led-wrap{display:flex; align-items:center; gap:9px; font-size:8px; letter-spacing:.3em; color:#5a675d}
+  .ctrls{display:flex; gap:8px; align-items:center}
+  .key{
+    font-family:var(--mono); font-size:10px; letter-spacing:.18em; color:#9fb3a4;
+    background:linear-gradient(180deg,#1b201b,#101410);
+    border:1px solid #262c26; border-radius:7px;
+    padding:7px 11px; user-select:none;
+    box-shadow:0 2px 0 rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+    transition:.18s;
+  }
+  .key:hover{color:var(--phos); border-color:rgba(61,255,139,.4)}
+  .key:active{transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.55), inset 0 1px 3px rgba(0,0,0,.6)}
+  .key.active{
+    color:var(--phos); border-color:rgba(61,255,139,.55);
+    box-shadow:0 0 12px rgba(61,255,139,.28), inset 0 0 8px rgba(61,255,139,.22);
+    text-shadow:0 0 8px rgba(61,255,139,.6);
+  }
+  .key.pwr{color:#e8a2a2; border-color:#3a2626}
+  .key.pwr:hover,.key.pwr.active{color:#ffd7d7; border-color:rgba(255,90,90,.6);
+    box-shadow:0 0 12px rgba(255,80,80,.3), inset 0 0 8px rgba(255,80,80,.2)}
+
+  /* ============ CURSOR FX ============ */
+  #cursorfx{position:fixed; inset:0; z-index:999; pointer-events:none}
+  @media (pointer:coarse){ #cursorfx{display:none} }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:720px){
+    .tv{inset:7px; border-radius:18px; padding:9px 9px 0}
+    .screen{border-radius:12px / 10px}
+    .strip{height:46px; padding:0 2px}
+    .brand .model{display:none}
+    .brand b{letter-spacing:.2em; font-size:11px}
+    .key{padding:6px 8px; font-size:9px; letter-spacing:.08em}
+    .osd{font-size:9px; padding:12px 14px; letter-spacing:.2em}
+    #clock{display:none}
+    #chflash{top:42px; right:16px}
+    .channel{padding:64px 20px 84px}
+    .about-grid{grid-template-columns:1fr; gap:24px}
+    .ascii{font-size:9.5px; padding:14px 12px; justify-self:center}
+    .program{grid-template-columns:1fr auto; gap:4px 12px}
+    .program .num{grid-row:auto; grid-column:1 / -1}
+    .program .ds{grid-column:1}
+    .program .cta{grid-row:span 1}
+    .ticker{font-size:9px; padding-bottom:8px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .band,.flicker,.field,.tk,.scroll-hint{animation:none !important}
+    h1.rgb span{animation-duration:.01s; animation-delay:0s}
+    .channel>*{transition:none}
+    .screen.burst #noise{animation-duration:.05s}
+  }
+</style>
 </head>
 <body>
 
-  <!-- CRT power-on flash -->
-  <div class="crt-boot" aria-hidden="true"></div>
+<div class="tv boot" id="tv">
+  <div class="screen" id="screen">
 
-  <!-- drifting static particles -->
-  <canvas id="particles" aria-hidden="true"></canvas>
-
-  <!-- old-TV overlays -->
-  <div class="tv-noise" aria-hidden="true"></div>
-  <div class="tv-scanlines" aria-hidden="true"></div>
-  <div class="tv-sweep" aria-hidden="true"></div>
-  <div class="tv-vignette" aria-hidden="true"></div>
-  <div class="tv-flicker" aria-hidden="true"></div>
-
-  <div class="page">
-
-    <header class="site-header">
-      <a class="brand" href="#top">ardwetha<span class="cursor">_</span></a>
-      <nav class="site-nav">
-        <a href="#projects">projects</a>
-        <a href="https://github.com/ardwetha" target="_blank" rel="noopener noreferrer">github&nbsp;↗</a>
-      </nav>
-    </header>
-
-    <main>
-      <section class="hero" id="top">
-        <p class="hero-eyebrow" id="typeline">$ whoami</p>
-        <h1 class="glitch" data-text="ardwetha">ardwetha</h1>
-        <p class="hero-tagline">
-          developer of quiet software — blogs, daemons<br />
-          &amp; other small machines that run in the dark.
-        </p>
-        <div class="hero-actions">
-          <a class="btn btn-solid" href="#projects">view projects</a>
-          <a class="btn btn-ghost" href="https://github.com/ardwetha" target="_blank" rel="noopener noreferrer">github ↗</a>
+    <div class="crt" id="crt">
+      <div class="field">
+        <div class="osd">
+          <div class="live"><span class="dot"></span><span>ON AIR · ARDWETHA BROADCASTING SYSTEM</span></div>
+          <div class="right"><span id="osdCh">CH-01</span><span id="clock">--<i>:</i>--</span></div>
         </div>
-      </section>
 
-      <section class="projects" id="projects">
-        <h2 class="section-title"><span class="dim">$</span> ls ~/projects</h2>
-        <div class="cards">
+        <div id="chflash">CH-01</div>
 
-          <article class="card">
-            <div class="card-head">
-              <h3>NiceBlog</h3>
-              <span class="card-lang">Flask · Python</span>
+        <main class="tuner" id="tuner">
+          <!-- CH-01 · SIGNAL -->
+          <section class="channel" id="ch1">
+            <div class="hero-tag">▮▮ YOU ARE TUNED TO THE PERSONAL FREQUENCY OF ▮▮</div>
+            <h1 class="rgb" aria-label="ARDWETHA"><span style="--i:0">A</span><span style="--i:1">R</span><span style="--i:2">D</span><span style="--i:3">W</span><span style="--i:4">E</span><span style="--i:5">T</span><span style="--i:6">H</span><span style="--i:7">A</span></h1>
+            <p class="typed-line"><span id="typed">broadcasting code, notes &amp; small tools from the terminal.</span><span class="caret">▊</span></p>
+            <div class="freq">FREQ ▸ PYTHON · LINUX · OPEN SOURCE · SMALL SHARP TOOLS</div>
+            <div class="scroll-hint">▼ SCROLL TO CHANGE CHANNEL · KEYS 1–4 ▼</div>
+          </section>
+
+          <!-- CH-02 · OPERATOR -->
+          <section class="channel" id="ch2">
+            <div class="sec-head">CH-02 · THE OPERATOR</div>
+            <div class="about-grid">
+              <pre class="ascii" aria-hidden="true">┌──────────────────────┐
+│ ▓▒░  <span class="flashy">REC ●</span>  ░▒▓  │
+│                      │
+│   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄   │
+│   █ SIGNAL: STRONG █  │
+│   ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀   │
+│                      │
+└───┬────────────┬─────┘
+    ▐█▌        ▐█▌</pre>
+              <div class="about-copy">
+                <p><em>ardwetha</em> — terminal-dweller, builder of small sharp tools that do one job well and hum quietly in the background of your machine.</p>
+                <p>Mostly found shipping python, taming linux, and writing down how it went so the next person (probably future ardwetha) doesn't have to rediscover it.</p>
+                <div class="specs">
+                  <div>SYS<b>homelab of tiny daemons</b></div>
+                  <div>LANG<b>python, spoken fluently</b></div>
+                  <div>HABITAT<b>near a shell prompt</b></div>
+                  <div>STATUS<b>ONLINE ▮ caffeine nominal</b></div>
+                </div>
+              </div>
             </div>
-            <p class="card-desc">
-              A very small and simple microblog server. Drop articles into a
-              folder with a YAML-style title/date frontmatter and they appear
-              on the site automatically — the look stays customizable through
-              plain HTML templates.
-            </p>
-            <ul class="card-tags">
-              <li>microblog</li>
-              <li>flask</li>
-              <li>markdown</li>
-              <li>self-hosted</li>
-            </ul>
-            <a class="card-link" href="https://github.com/ardwetha/NiceBlog" target="_blank" rel="noopener noreferrer">view on github ↗</a>
-          </article>
+          </section>
 
-          <article class="card">
-            <div class="card-head">
-              <h3>A super simple battery notification daemon</h3>
-              <span class="card-lang">Rust</span>
+          <!-- CH-03 · PROGRAMMING -->
+          <section class="channel" id="ch3">
+            <div class="sec-head">CH-03 · NOW PROGRAMMING</div>
+            <div class="programs">
+              <a class="program" href="https://github.com/ardwetha/NiceBlog">
+                <span class="num">PRG·01</span>
+                <span class="nm" data-text="NiceBlog">NiceBlog</span>
+                <span class="cta">TUNE IN ▸</span>
+                <span class="ds">A nice little home on the web — blogging, the simple way.</span>
+              </a>
+              <a class="program" href="https://github.com/ardwetha/Jupyter-Notebook-Setup">
+                <span class="num">PRG·02</span>
+                <span class="nm" data-text="Jupyter-Notebook-Setup">Jupyter-Notebook-Setup</span>
+                <span class="cta">TUNE IN ▸</span>
+                <span class="ds">From bare metal to running notebooks — reproducible setup, zero drama.</span>
+              </a>
+              <a class="program" href="https://github.com/ardwetha/A-super-simple-battery-notification-daemon">
+                <span class="num">PRG·03</span>
+                <span class="nm" data-text="battery-notification-daemon">battery-notification-daemon</span>
+                <span class="cta">TUNE IN ▸</span>
+                <span class="ds">A super simple battery notification daemon. Your laptop's tiny watchdog.</span>
+              </a>
+              <a class="program" href="https://github.com/ardwetha/python_logic">
+                <span class="num">PRG·04</span>
+                <span class="nm" data-text="python_logic">python_logic</span>
+                <span class="cta">TUNE IN ▸</span>
+                <span class="ds">Logic patterns &amp; puzzles, argued in python.</span>
+              </a>
             </div>
-            <p class="card-desc">
-              A tiny Rust daemon that watches your battery capacity and fires
-              customizable notifications through notify-send when your own
-              low / normal / critical thresholds are reached. Configured via
-              TOML, started at login.
-            </p>
-            <ul class="card-tags">
-              <li>linux</li>
-              <li>battery</li>
-              <li>notify-send</li>
-              <li>toml</li>
-            </ul>
-            <a class="card-link" href="https://github.com/ardwetha/A-super-simple-battery-notification-daemon" target="_blank" rel="noopener noreferrer">view on github ↗</a>
-          </article>
+            <div class="prog-foot">ALL PROGRAMS AIRED VIA GITHUB · NO SUBSCRIPTION REQUIRED</div>
+          </section>
 
+          <!-- CH-04 · END CARD -->
+          <section class="channel" id="ch4">
+            <div class="sec-head">CH-04 · END OF TRANSMISSION?</div>
+            <div class="end-big">STAY TUNED▓▓</div>
+            <p class="end-sub">This is only the local broadcast.<br>The main signal continues on GitHub.</p>
+            <a class="end-btn" href="https://github.com/ardwetha">github.com/ardwetha ▸</a>
+            <div class="end-foot">
+              © 2026 ARDWETHA · BROADCAST FREE OF CHARGE IN GLORIOUS PHOSPHOR GREEN<br>
+              <a href="#ch1" id="backTop">↺ RETURN TO CH-01</a> · TRY THE POWER BUTTON. GO ON.
+            </div>
+          </section>
+        </main>
+
+        <div class="ticker" aria-hidden="true">
+          <div class="tk">
+            <span>NOW BROADCASTING ▮ NICEBLOG ▮ JUPYTER SETUP ▮ BATTERY DAEMON ▮ PYTHON LOGIC ▮ SIGNAL STRONG ▮ NO ADS, EVER ▮ STAY TUNED ▮&nbsp;</span>
+            <span>NOW BROADCASTING ▮ NICEBLOG ▮ JUPYTER SETUP ▮ BATTERY DAEMON ▮ PYTHON LOGIC ▮ SIGNAL STRONG ▮ NO ADS, EVER ▮ STAY TUNED ▮&nbsp;</span>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
-    <footer class="site-footer">
-      <p>© <span id="year">2026</span> ardwetha — broadcast in black &amp; white</p>
-      <p class="footer-sub">
-        no trackers · no cookies · just static —
-        <a href="https://github.com/ardwetha" target="_blank" rel="noopener noreferrer">signal source ↗</a>
-      </p>
-    </footer>
-
+    <div class="standby"><span>⏻ STANDBY</span></div>
+    <div class="band"></div>
+    <div class="vignette"></div>
+    <div class="glare"></div>
+    <div class="scanlines"></div>
+    <div class="aperture"></div>
+    <canvas id="noise"></canvas>
+    <div class="flicker"></div>
   </div>
 
-  <div class="av-tag" aria-hidden="true">AV-1</div>
+  <div class="strip">
+    <div class="brand"><span class="logo">▣</span><b>ARDWETHA</b><span class="model">CRT-3000 · PHOSPHOR EDITION</span></div>
+    <div class="led-wrap"><span class="led on" id="led"></span>PWR</div>
+    <div class="ctrls">
+      <button class="key active" data-ch="0" type="button">CH·01</button>
+      <button class="key" data-ch="1" type="button">CH·02</button>
+      <button class="key" data-ch="2" type="button">CH·03</button>
+      <button class="key" data-ch="3" type="button">CH·04</button>
+      <button class="key" id="sndBtn" type="button" aria-pressed="false">SND OFF</button>
+      <button class="key pwr" id="pwrBtn" type="button">⏻ PWR</button>
+    </div>
+  </div>
+</div>
 
-  <script src="script.js"></script>
+<canvas id="cursorfx"></canvas>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const tv = $('#tv'), screen = $('#screen'), tuner = $('#tuner');
+  const osdCh = $('#osdCh'), chflash = $('#chflash');
+  const keys = [...document.querySelectorAll('.key[data-ch]')];
+  const pwrBtn = $('#pwrBtn'), led = $('#led'), sndBtn = $('#sndBtn');
+  let powered = true, bootDone = false, cur = 0;
+
+  /* ---------- clock (VCR style) ---------- */
+  const clock = $('#clock');
+  const tick = () => {
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    clock.innerHTML = h + '<i>:</i>' + m;
+  };
+  tick(); setInterval(tick, 1000);
+
+  /* ---------- synthesized sound (no files) ---------- */
+  const Snd = (() => {
+    let ctx = null, on = false;
+    const ac = () => {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') ctx.resume();
+      return ctx;
+    };
+    const burst = (dur = .22, vol = .16) => {          // TV static
+      if (!on) return;
+      try {
+        const a = ac(), n = (a.sampleRate * dur) | 0;
+        const buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 1.4);
+        const src = a.createBufferSource(); src.buffer = buf;
+        const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 3200;
+        const g = a.createGain(); g.gain.value = vol;
+        src.connect(f); f.connect(g); g.connect(a.destination); src.start();
+      } catch (e) {}
+    };
+    const blip = (fr = 760, dur = .06, vol = .045) => { // UI tick
+      if (!on) return;
+      try {
+        const a = ac(), o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
+        o.type = 'square'; o.frequency.value = fr;
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+        o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur);
+      } catch (e) {}
+    };
+    const hum = up => {                                 // power on/off sweep
+      if (!on) return;
+      try {
+        const a = ac(), o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(up ? 42 : 220, t);
+        o.frequency.exponentialRampToValueAtTime(up ? 120 : 28, t + .5);
+        g.gain.setValueAtTime(.0001, t);
+        g.gain.exponentialRampToValueAtTime(.05, t + .08);
+        g.gain.exponentialRampToValueAtTime(.0001, t + .55);
+        o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + .6);
+      } catch (e) {}
+    };
+    return {
+      burst, blip, hum,
+      get on() { return on; },
+      set on(v) { on = v; if (v) { try { ac(); } catch (e) {} } }
+    };
+  })();
+  try { if (localStorage.getItem('ardwetha-snd') === '1') { Snd.on = true; } } catch (e) {}
+  const paintSnd = () => {
+    sndBtn.textContent = Snd.on ? 'SND ON' : 'SND OFF';
+    sndBtn.classList.toggle('active', Snd.on);
+    sndBtn.setAttribute('aria-pressed', Snd.on);
+  };
+  paintSnd();
+  sndBtn.addEventListener('click', () => {
+    Snd.on = !Snd.on;
+    try { localStorage.setItem('ardwetha-snd', Snd.on ? '1' : '0'); } catch (e) {}
+    paintSnd();
+    if (Snd.on) Snd.blip(880);
+  });
+
+  /* ---------- noise canvas ---------- */
+  const nz = $('#noise'), nctx = nz.getContext('2d');
+  const sizeNoise = () => { nz.width = Math.max(80, Math.ceil(innerWidth / 6)); nz.height = Math.max(50, Math.ceil(innerHeight / 6)); };
+  sizeNoise(); addEventListener('resize', sizeNoise);
+  let lastN = 0;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function noiseLoop(t) {
+    if (t - lastN > 55 && !reduced) {
+      lastN = t;
+      const id = nctx.createImageData(nz.width, nz.height), d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = (Math.random() * 255) | 0;
+        d[i] = v * .3; d[i + 1] = v; d[i + 2] = v * .5; d[i + 3] = 255;
+      }
+      nctx.putImageData(id, 0, 0);
+    }
+    requestAnimationFrame(noiseLoop);
+  })(0);
+
+  /* ---------- channels: static burst + OSD on change ---------- */
+  const setChannel = (i, fx = true) => {
+    cur = i;
+    osdCh.textContent = 'CH-0' + (i + 1);
+    keys.forEach((k, j) => k.classList.toggle('active', j === i));
+    if (fx && powered) {
+      screen.classList.remove('burst'); void screen.offsetWidth; screen.classList.add('burst');
+      chflash.textContent = 'CH-0' + (i + 1);
+      chflash.classList.remove('show'); void chflash.offsetWidth; chflash.classList.add('show');
+      Snd.burst(.18, .12);
+    }
+  };
+  tuner.addEventListener('scroll', () => {
+    requestAnimationFrame(() => {
+      const i = Math.max(0, Math.min(3, Math.round(tuner.scrollTop / tuner.clientHeight)));
+      if (i !== cur) setChannel(i);
+    });
+  }, { passive: true });
+  keys.forEach((k, i) => k.addEventListener('click', () => {
+    Snd.blip(620 + i * 110);
+    tuner.scrollTo({ top: i * tuner.clientHeight, behavior: 'smooth' });
+  }));
+  addEventListener('keydown', e => {
+    if (e.key >= '1' && e.key <= '4') tuner.scrollTo({ top: (+e.key - 1) * tuner.clientHeight, behavior: 'smooth' });
+  });
+  $('#backTop').addEventListener('click', e => { e.preventDefault(); tuner.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+  /* section reveal */
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('live');
+  }), { root: tuner, threshold: .55 });
+  document.querySelectorAll('.channel').forEach(s => io.observe(s));
+
+  /* ---------- power ---------- */
+  const setPower = on => {
+    if (on === powered && bootDone) return;
+    powered = on;
+    tv.classList.toggle('off', !on);
+    led.classList.toggle('on', on);
+    if (on) {
+      tv.classList.remove('boot');
+      Snd.hum(true); Snd.burst(.28, .12);
+      chflash.textContent = 'CH-0' + (cur + 1);
+      chflash.classList.remove('show'); void chflash.offsetWidth; chflash.classList.add('show');
+    } else {
+      Snd.hum(false);
+    }
+  };
+  pwrBtn.addEventListener('click', () => setPower(!powered));
+  screen.addEventListener('click', () => { if (!powered) setPower(true); });
+
+  /* ---------- typing loop ---------- */
+  const phrases = [
+    'broadcasting code, notes & small tools from the terminal.',
+    'python wrangler · linux tinkerer · notebook herder.',
+    'the battery daemon is watching. it is always watching.',
+    'you are watching ARDWETHA ▮ thank you for tuning in.'
+  ];
+  const tEl = $('#typed');
+  setTimeout(() => {
+    let p = 0, i = 0, del = false;
+    (function type() {
+      const s = phrases[p];
+      tEl.textContent = s.slice(0, i);
+      let d = del ? 16 : 32 + Math.random() * 42;
+      if (!del && i === s.length) { d = 2800; del = true; }
+      else if (del && i === 0) { del = false; p = (p + 1) % phrases.length; d = 600; }
+      else i += del ? -1 : 1;
+      setTimeout(type, d);
+    })();
+  }, reduced ? 200 : 1800);
+
+  /* ---------- boot ---------- */
+  setChannel(0, false);
+  setTimeout(() => { tv.classList.remove('boot'); bootDone = true; }, 1100);
+
+  /* quiet tick when hovering links (only if sound on) ---------- */
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest && e.target.closest('a.program, .end-btn')) Snd.blip(1150, .03, .02);
+  });
+
+  /* ---------- custom cursor: crosshair + phosphor trail ---------- */
+  if (matchMedia('(pointer:fine)').matches) {
+    const c = $('#cursorfx'), x = c.getContext('2d');
+    let W, H;
+    const size = () => {
+      const DPR = Math.min(devicePixelRatio || 1, 2);
+      W = innerWidth; H = innerHeight;
+      c.width = W * DPR; c.height = H * DPR;
+      x.setTransform(DPR, 0, 0, DPR, 0, 0);
+    };
+    size(); addEventListener('resize', size);
+    const pts = [], rings = [];
+    let mx = -100, my = -100, seen = false, hover = false, down = false;
+    addEventListener('pointermove', e => {
+      mx = e.clientX; my = e.clientY; seen = true;
+      pts.push({ x: mx, y: my, t: performance.now() });
+      hover = !!(e.target.closest && e.target.closest('a,button'));
+    }, { passive: true });
+    addEventListener('pointerdown', e => { down = true; rings.push({ x: e.clientX, y: e.clientY, t: performance.now() }); });
+    addEventListener('pointerup', () => down = false);
+    document.addEventListener('mouseleave', () => seen = false);
+    (function loop(t) {
+      x.clearRect(0, 0, W, H);
+      while (pts.length && t - pts[0].t > 420) pts.shift();
+      x.lineCap = 'round'; x.shadowColor = 'rgba(61,255,139,.8)'; x.shadowBlur = 6;
+      for (let i = 1; i < pts.length; i++) {
+        const a = 1 - (t - pts[i].t) / 420;
+        x.strokeStyle = 'rgba(61,255,139,' + (a * .5).toFixed(3) + ')';
+        x.lineWidth = a * 2.4;
+        x.beginPath(); x.moveTo(pts[i - 1].x, pts[i - 1].y); x.lineTo(pts[i].x, pts[i].y); x.stroke();
+      }
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const r = rings[i], k = (t - r.t) / 480;
+        if (k >= 1) { rings.splice(i, 1); continue; }
+        x.strokeStyle = 'rgba(61,255,139,' + ((1 - k) * .65).toFixed(3) + ')';
+        x.lineWidth = 1.5;
+        x.beginPath(); x.arc(r.x, r.y, 6 + k * 32, 0, 7); x.stroke();
+      }
+      if (seen) {
+        if (hover) { /* acquisition brackets */
+          const s = 16, l = 7;
+          x.strokeStyle = 'rgba(61,255,139,.95)'; x.lineWidth = 1.6;
+          for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+            x.beginPath();
+            x.moveTo(mx + dx * s, my + dy * s - dy * l);
+            x.lineTo(mx + dx * s, my + dy * s);
+            x.lineTo(mx + dx * s - dx * l, my + dy * s);
+            x.stroke();
+          }
+        } else { /* crosshair */
+          const g = 4, L = down ? 8 : 11;
+          x.strokeStyle = 'rgba(61,255,139,.9)'; x.lineWidth = 1.4;
+          x.beginPath();
+          x.moveTo(mx - L, my); x.lineTo(mx - g, my);
+          x.moveTo(mx + g, my); x.lineTo(mx + L, my);
+          x.moveTo(mx, my - L); x.lineTo(mx, my - g);
+          x.moveTo(mx, my + g); x.lineTo(mx, my + L);
+          x.stroke();
+        }
+        x.shadowBlur = 10;
+        x.fillStyle = down ? '#c8ffdd' : 'rgba(61,255,139,.95)';
+        x.beginPath(); x.arc(mx, my, down ? 2.6 : 1.8, 0, 7); x.fill();
+      }
+      requestAnimationFrame(loop);
+    })(performance.now());
+  }
+})();
+</script>
 </body>
 </html>
